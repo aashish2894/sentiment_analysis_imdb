@@ -134,17 +134,17 @@ for review in train["review"]:
 
 #trainDataVecs = getAvgFeatureVecs(clean_train_reviews, model, num_features)
 
-X_train = getFeatureVecs(clean_train_reviews[1:2000], model, num_features)
+X_train = getFeatureVecs(clean_train_reviews, model, num_features)
 Y_train = train["sentiment"]
-y_train_sub = Y_train[1:2000] 
-X_test = getFeatureVecs(clean_train_reviews[2001:3000], model, num_features)
+#y_train_sub = Y_train[1:100] 
+#X_test = getFeatureVecs(clean_train_reviews[2001:3000], model, num_features)
 
-# print("Creating average feature vecs for test reviews..")
-# clean_test_reviews = []
-# for review in test["review"]:
-# 	clean_test_reviews.append(review_to_wordlist(review, remove_stopwords=True))
-
-#testDataVecs = getAvgFeatureVecs(clean_train_reviews, model, num_features)
+#print("Creating average feature vecs for test reviews..")
+#clean_test_reviews = []
+#for review in test["review"]:
+#    clean_test_reviews.append(review_to_wordlist(review, remove_stopwords=True))
+#
+##testDataVecs = getAvgFeatureVecs(clean_train_reviews, model, num_features)
 #X_test = getFeatureVecs(clean_test_reviews, model, num_features)
 
 
@@ -180,23 +180,40 @@ model.add(Convolution1D(32, 3, padding='same'))
 model.add(Convolution1D(16, 3, padding='same'))
 model.add(Flatten())
 model.add(Dropout(0.2))
-model.add(Dense(180,activation='sigmoid'))
+model.add(Dense(180,activation='elu'))
 model.add(Dropout(0.2))
-model.add(Dense(1,activation='sigmoid'))
+model.add(Dense(1,activation='elu'))
 
 # Log to tensorboard
 tensorBoardCallback = TensorBoard(log_dir='./logs', write_graph=True)
 model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
 
-model.fit(X_train, y_train_sub, epochs=1, callbacks=[tensorBoardCallback], batch_size=128)
+model.fit(X_train, Y_train, epochs=1, callbacks=[tensorBoardCallback], batch_size=128)
 
 # Evaluation on the test set
 #scores = model.evaluate(X_test, y_test, verbose=0)
 #print("Accuracy: %.2f%%" % (scores[1]*100))
+
+del X_train
+del Y_train
+del clean_train_reviews
+
+print("Creating average feature vecs for test reviews..")
+clean_test_reviews = []
+for review in test["review"]:
+    clean_test_reviews.append(review_to_wordlist(review, remove_stopwords=True))
+
+X_test = getFeatureVecs(clean_test_reviews, model, num_features)
+
+
+
 result = model.predict(X_test)
 result[result>0.5] = 1
 result[result<0.5] = 0
-#output = pd.DataFrame(data={"id":test["id"], "sentiment":result})
-#output.to_csv("Word2Vec_AverageVectors1.csv", index=False, quoting=3)
+result = result.astype(int)
+result = np.squeeze(result)
+id_t = test["id"]
+output = pd.DataFrame(data={"id":id_t, "sentiment":result})
+output.to_csv("Word2Vec_CNNVectors1.csv", index=False, quoting=3)
 
 

@@ -1,4 +1,4 @@
-# LSTM for sequence classification in the IMDB dataset
+# CNN for sequence classification in the IMDB dataset
 import numpy
 from keras.datasets import imdb
 from keras.models import Sequential
@@ -16,6 +16,22 @@ top_words = 10000
 max_review_length = 1600
 X_train = sequence.pad_sequences(X_train, maxlen=max_review_length)
 X_test = sequence.pad_sequences(X_test, maxlen=max_review_length)
+
+####edit##############
+indices = np.arange(X_train.shape[0])
+np.random.shuffle(indices)
+X_train = X_train[indices]
+labels = y_train
+labels = labels[indices]
+VALIDATION_SPLIT = 0.2
+nb_validation_samples = int(VALIDATION_SPLIT * X_train.shape[0])
+
+x_train_1 = X_train[:-nb_validation_samples]
+y_train_1 = y_train[:-nb_validation_samples]
+x_val = X_train[-nb_validation_samples:]
+y_val = y_train[-nb_validation_samples:]
+##########################################################
+
 
 # Using embedding from Keras
 embedding_vecor_length = 300
@@ -36,7 +52,7 @@ model.add(Dense(1,activation='sigmoid'))
 tensorBoardCallback = TensorBoard(log_dir='./logs', write_graph=True)
 model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
 
-model.fit(X_train, y_train, epochs=3, callbacks=[tensorBoardCallback], batch_size=64)
+model.fit(x_train_1, y_train_1, validation_data=(x_val, y_val), epochs=1, callbacks=[tensorBoardCallback], batch_size=64)
 
 # Evaluation on the test set
 scores = model.evaluate(X_test, y_test, verbose=0)
